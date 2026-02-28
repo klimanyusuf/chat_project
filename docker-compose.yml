@@ -42,7 +42,7 @@ services:
       - DJANGO_SETTINGS_MODULE=chat_project.settings
       - DB_HOST=db
       - REDIS_URL=redis://redis:6379/0
-      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
     depends_on:
       db:
         condition: service_healthy
@@ -58,10 +58,9 @@ services:
       - DJANGO_SETTINGS_MODULE=chat_project.settings
       - DB_HOST=db
       - REDIS_URL=redis://redis:6379/0
-      - DEEPSEEK_API_KEY=${DEEPSEEK_API_KEY}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
       - CELERY_BROKER_URL=redis://redis:6379/0
       - CELERY_RESULT_BACKEND=redis://redis:6379/0
-
     depends_on:
       - db
       - redis
@@ -70,5 +69,6 @@ services:
 volumes:
   postgres_data:
   redis_data:
+
 
 

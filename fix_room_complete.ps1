@@ -1,0 +1,211 @@
+# fix_room_complete.ps1
+$roomHtmlPath = "templates/chat/room.html"
+$correctedContent = @'
+{% extends 'base.html' %}
+
+{% block title %}Chat Room{% endblock %}
+
+{% block content %}
+<div style="max-width: 600px; margin: 0 auto; padding: 20px; display: flex; flex-direction: column; height: 100vh;">
+    <div style="display: flex; align-items: center; padding: 10px; border-bottom: 1px solid #ccc; background: white;">
+        <button onclick="window.location.href='/'" style="margin-right: 10px; background: none; border: none; font-size: 24px; cursor: pointer;">←</button>
+        <div>
+            <h2 id="room-name" style="margin: 0; font-size: 18px; cursor: pointer;" onclick="goToGroupInfo()">Loading...</h2>
+            <span id="online-status" style="font-size: 12px; color: #666;"></span>
+        </div>
+    </div>
+
+    <div id="messages" style="flex: 1; overflow-y: auto; padding: 10px; background: #e5ddd5;"></div>
+    <div id="smart-replies" style="display: flex; gap: 5px; margin-bottom: 10px; min-height: 40px; flex-wrap: wrap;"></div>
+    <div id="typing-indicator" style="color: #666; font-style: italic; font-size: 12px; margin-bottom: 5px;"></div>
+
+    <div style="display: flex; gap: 10px; border-top: 1px solid #ccc; padding: 10px; background: white;">
+        <input type="text" id="message-input" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 20px;" placeholder="Type a message..." autofocus>
+        <button id="send-btn" style="padding: 10px 20px; background: #0084ff; color: white; border: none; border-radius: 20px; cursor: pointer;">Send</button>
+    </div>
+</div>
+
+<script>
+    const roomId = window.location.pathname.split('/').pop();
+    const token = localStorage.getItem('token');
+    const currentUsername = localStorage.getItem('username');
+
+    if (!token || !currentUsername) {
+        alert('Not logged in');
+        window.location.href = '/';
+    }
+
+    let roomDetails = null;
+    let otherParticipantId = null;
+    let roomNameEl = document.getElementById('room-name');
+    let onlineStatus = document.getElementById('online-status');
+
+    function goToGroupInfo() {
+        if (roomDetails && roomDetails.room_type === 'group') {
+            window.location.href = `/group-info/${roomId}/`;
+        }
+    }
+
+    async function loadRoomDetails() {
+        try {
+            const res = await fetch(`/api/chat/rooms/${roomId}/`, { headers: { 'Authorization': `Bearer ${token}` } });
+            if (res.ok) {
+                roomDetails = await res.json();
+                if (roomDetails.room_type === 'private') {
+                    const other = roomDetails.participants.find(p => p.username !== currentUsername);
+                    if (other) {
+                        roomNameEl.innerText = other.username;
+                        otherParticipantId = other.id;
+                    } else {
+                        roomNameEl.innerText = 'Private Chat';
+                    }
+                    roomNameEl.style.cursor = 'default';
+                    roomNameEl.onclick = null;
+                } else {
+                    roomNameEl.innerText = roomDetails.name || 'Group Chat';
+                    roomNameEl.style.cursor = 'pointer';
+                }
+                loadMessages();
+            } else {
+                console.error('Failed to load room details');
+                roomNameEl.innerText = 'Error';
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    async function loadMessages() {
+        try {
+            const res = await fetch(`/api/chat/rooms/${roomId}/messages/`, { headers: { 'Authorization': `Bearer ${token}` } });
+            if (res.ok) {
+                const messages = await res.json();
+                messages.forEach(msg => {
+                    displayMessage({
+                        username: msg.sender ? msg.sender.username : 'Unknown',
+                        content: msg.content,
+                        timestamp: msg.created_at
+                    });
+                });
+            }
+        } catch (e) { console.error(e); }
+    }
+
+    function displayMessage(data) {
+        const messagesDiv = document.getElementById('messages');
+        const msgDiv = document.createElement('div');
+        msgDiv.style.margin = '10px 0';
+        msgDiv.style.display = 'flex';
+        msgDiv.style.flexDirection = 'column';
+        msgDiv.style.alignItems = data.username === currentUsername ? 'flex-end' : 'flex-start';
+
+        const bubbleWrapper = document.createElement('div');
+        bubbleWrapper.style.maxWidth = '70%';
+
+        // For group chats, show sender name if not current user
+        if (roomDetails && roomDetails.room_type === 'group' && data.username !== currentUsername) {
+            const nameSpan = document.createElement('div');
+            nameSpan.style.fontSize = '12px';
+            nameSpan.style.fontWeight = 'bold';
+            nameSpan.style.marginBottom = '2px';
+            nameSpan.style.color = '#666';
+            nameSpan.innerText = data.username;
+            bubbleWrapper.appendChild(nameSpan);
+        }
+
+        const bubble = document.createElement('div');
+        bubble.style.padding = '8px 12px';
+        bubble.style.borderRadius = '12px';
+        bubble.style.wordWrap = 'break-word';
+
+        if (data.username === currentUsername) {
+            bubble.style.background = '#dcf8c6';
+            bubble.style.marginLeft = 'auto';
+        } else {
+            bubble.style.background = 'white';
+            bubble.style.marginRight = 'auto';
+        }
+
+        bubble.innerHTML = data.content;
+        bubbleWrapper.appendChild(bubble);
+
+        const timeSpan = document.createElement('div');
+        timeSpan.style.fontSize = '10px';
+        timeSpan.style.color = '#999';
+        timeSpan.style.marginTop = '2px';
+        timeSpan.style.textAlign = 'right';
+        timeSpan.innerText = new Date(data.timestamp).toLocaleTimeString();
+        bubbleWrapper.appendChild(timeSpan);
+
+        msgDiv.appendChild(bubbleWrapper);
+        messagesDiv.appendChild(msgDiv);
+        messagesDiv.scrollTop = messagesDiv.scrollHeight;
+    }
+
+    const chatWs = new WebSocket(`ws://${window.location.host}/ws/chat/${roomId}/?token=${token}`);
+    chatWs.onopen = () => { console.log('Chat WS connected'); loadRoomDetails(); };
+    chatWs.onmessage = (e) => {
+        const data = JSON.parse(e.data);
+        if (data.type === 'new_message') displayMessage(data);
+        else if (data.type === 'typing') {
+            document.getElementById('typing-indicator').innerText = data.is_typing ? `${data.username} is typing...` : '';
+        } else if (data.type === 'user_online') {
+            if (otherParticipantId && data.user_id === otherParticipantId) onlineStatus.innerText = 'Online';
+        } else if (data.type === 'user_offline') {
+            if (otherParticipantId && data.user_id === otherParticipantId) onlineStatus.innerText = 'Offline';
+        }
+    };
+
+    const smartReplyWs = new WebSocket(`ws://${window.location.host}/ws/smart-reply/${roomId}/?token=${token}`);
+    smartReplyWs.onmessage = (e) => {
+        const data = JSON.parse(e.data);
+        if (data.type === 'smart_replies') {
+            const container = document.getElementById('smart-replies');
+            container.innerHTML = '';
+            data.suggestions.forEach(s => {
+                const btn = document.createElement('button');
+                btn.innerText = s;
+                btn.style.padding = '5px 10px';
+                btn.style.background = '#4CAF50';
+                btn.style.color = 'white';
+                btn.style.border = 'none';
+                btn.style.borderRadius = '20px';
+                btn.style.cursor = 'pointer';
+                btn.style.margin = '2px';
+                btn.onclick = () => document.getElementById('message-input').value = s;
+                container.appendChild(btn);
+            });
+        }
+    };
+
+    let typingTimer;
+    document.getElementById('message-input').addEventListener('input', () => {
+        clearTimeout(typingTimer);
+        if (chatWs.readyState === WebSocket.OPEN) chatWs.send(JSON.stringify({ type: 'typing', is_typing: true }));
+        typingTimer = setTimeout(() => {
+            if (chatWs.readyState === WebSocket.OPEN) chatWs.send(JSON.stringify({ type: 'typing', is_typing: false }));
+        }, 3000);
+    });
+
+    function sendMessage() {
+        const input = document.getElementById('message-input');
+        const text = input.value.trim();
+        if (text && chatWs.readyState === WebSocket.OPEN) {
+            chatWs.send(JSON.stringify({ type: 'message', content: text }));
+            input.value = '';
+            chatWs.send(JSON.stringify({ type: 'typing', is_typing: false }));
+        } else {
+            console.error('WebSocket not open, state:', chatWs.readyState);
+        }
+    }
+
+    document.getElementById('send-btn').onclick = sendMessage;
+    document.getElementById('message-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
+</script>
+{% endblock %}
+'@
+
+Set-Content -Path $roomHtmlPath -Value $correctedContent -Encoding UTF8
+Write-Host "✅ Replaced room.html with complete corrected version."
+
+# Restart web container to ensure template is fresh
+docker-compose restart web
+Write-Host "✅ Web container restarted. Refresh your browser."

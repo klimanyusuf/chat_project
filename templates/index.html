@@ -1,0 +1,231 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Chat Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .login-form, .dashboard { margin-top: 20px; }
+        .conversation-list { border: 1px solid #ccc; border-radius: 8px; overflow: hidden; margin: 10px 0; }
+        .conversation-item { display: flex; align-items: center; padding: 10px; cursor: pointer; border-bottom: 1px solid #eee; }
+        .conversation-item:hover { background: #f5f5f5; }
+        .conversation-details { flex: 1; margin-left: 10px; }
+        .conversation-name { font-weight: bold; }
+        .last-message { font-size: 12px; color: #666; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 300px; }
+        .timestamp { font-size: 10px; color: #999; }
+        .online-indicator { width: 10px; height: 10px; border-radius: 50%; background: #4caf50; display: inline-block; margin-left: 5px; }
+        .offline-indicator { width: 10px; height: 10px; border-radius: 50%; background: #ccc; display: inline-block; margin-left: 5px; }
+        .user-list, .group-section { margin-top: 20px; }
+        .user-item { cursor: pointer; padding: 5px; margin: 2px; background: #f0f0f0; border-radius: 4px; display: inline-block; }
+        .user-item:hover { background: #e0e0e0; }
+        button { padding: 8px 16px; background: #0084ff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        input { padding: 8px; margin: 5px; }
+    </style>
+</head>
+<body>
+    <div id="login-section" class="login-form">
+        <h2>Login</h2>
+        <input type="text" id="username" placeholder="Email" value="alice@example.com">
+        <input type="password" id="password" placeholder="Password" value="password123">
+        <button onclick="login()">Login</button>
+        <p id="login-error" style="color: red;"></p>
+    </div>
+
+    <div id="dashboard-section" class="dashboard" style="display: none;">
+        <h2>Welcome, <span id="display-name"></span>! <button onclick="logout()">Logout</button></h2>
+
+        <h3>Chats</h3>
+        <div id="conversation-list" class="conversation-list"></div>
+
+        <h3>Other Users</h3>
+        <div id="user-list" class="user-list"></div>
+
+        <div class="group-section">
+            <h3>Create Group</h3>
+            <div id="group-user-list" class="user-list"></div>
+            <input type="text" id="group-name" placeholder="Group name (optional)">
+            <button onclick="createGroup()">Create Group</button>
+        </div>
+    </div>
+
+    <script>
+        let token = localStorage.getItem('token');
+        let currentUser = null;
+
+        async function login() {
+            const email = document.getElementById('username').value;
+            const password = document.getElementById('password').value;
+            const response = await fetch('/api/auth/login/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email: email, password: password })
+            });
+            if (response.ok) {
+                const data = await response.json();
+                token = data.access;
+                localStorage.setItem('token', token);
+                localStorage.setItem('username', data.user.username);
+                document.getElementById('login-section').style.display = 'none';
+                document.getElementById('dashboard-section').style.display = 'block';
+                await loadDashboard();
+            } else {
+                document.getElementById('login-error').innerText = 'Login failed. Use email and password.';
+            }
+        }
+
+        function logout() {
+            localStorage.removeItem('token');
+            localStorage.removeItem('username');
+            token = null;
+            document.getElementById('login-section').style.display = 'block';
+            document.getElementById('dashboard-section').style.display = 'none';
+        }
+
+        async function loadDashboard() {
+            const userResp = await fetch('/api/auth/session/', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (userResp.ok) {
+                const userData = await userResp.json();
+                currentUser = userData.user;
+                document.getElementById('display-name').innerText = currentUser.username;
+            }
+
+            // Load rooms (conversations)
+            const roomsResp = await fetch('/api/chat/rooms/', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (roomsResp.ok) {
+                const rooms = await roomsResp.json();
+                displayConversations(rooms);
+            }
+
+            // Load users for starting new chats
+            const usersResp = await fetch('/api/auth/users/', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (usersResp.ok) {
+                const users = await usersResp.json();
+                const others = users.filter(u => u.id !== currentUser?.id);
+                displayUsers(others);
+                displayGroupUsers(others);
+            }
+        }
+
+        function displayConversations(rooms) {
+            const container = document.getElementById('conversation-list');
+            container.innerHTML = '';
+            rooms.forEach(room => {
+                const div = document.createElement('div');
+                div.className = 'conversation-item';
+                div.onclick = () => window.location.href = `/room/${room.id}/`;
+
+                let name = '';
+                let lastMsg = room.last_message ? `${room.last_message.sender}: ${room.last_message.content}` : 'No messages yet';
+                let time = room.last_message ? new Date(room.last_message.timestamp).toLocaleTimeString() : '';
+
+                if (room.room_type === 'private') {
+                    const other = room.participants.find(p => p.username !== currentUser.username);
+                    name = other ? other.username : 'Private Chat';
+                } else {
+                    name = room.name || 'Group Chat';
+                }
+
+                div.innerHTML = `
+                    <div class="conversation-details">
+                        <div class="conversation-name">${name}</div>
+                        <div class="last-message">${lastMsg}</div>
+                    </div>
+                    <div class="timestamp">${time}</div>
+                `;
+                container.appendChild(div);
+            });
+        }
+
+        function displayUsers(users) {
+            const container = document.getElementById('user-list');
+            container.innerHTML = '';
+            users.forEach(user => {
+                const span = document.createElement('span');
+                span.className = 'user-item';
+                span.innerText = user.username;
+                span.onclick = () => startPrivateChat(user.id);
+                container.appendChild(span);
+            });
+        }
+
+        function displayGroupUsers(users) {
+            const container = document.getElementById('group-user-list');
+            container.innerHTML = '';
+            users.forEach(user => {
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.value = user.id;
+                checkbox.id = `user-${user.id}`;
+                const label = document.createElement('label');
+                label.htmlFor = `user-${user.id}`;
+                label.innerText = user.username;
+                label.style.marginRight = '10px';
+                const div = document.createElement('div');
+                div.style.display = 'inline-block';
+                div.appendChild(checkbox);
+                div.appendChild(label);
+                container.appendChild(div);
+            });
+        }
+
+        async function startPrivateChat(userId) {
+            const response = await fetch('/api/chat/rooms/create/', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    room_type: 'private',
+                    participant_ids: [userId]
+                })
+            });
+            if (response.ok) {
+                const room = await response.json();
+                window.location.href = `/room/${room.id}/`;
+            } else {
+                alert('Could not create room');
+            }
+        }
+
+        async function createGroup() {
+            const checkboxes = document.querySelectorAll('#group-user-list input[type="checkbox"]:checked');
+            const participant_ids = Array.from(checkboxes).map(cb => parseInt(cb.value));
+            if (participant_ids.length === 0) {
+                alert('Select at least one participant');
+                return;
+            }
+            const groupName = document.getElementById('group-name').value;
+            const response = await fetch('/api/chat/rooms/create/', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${token}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    room_type: 'group',
+                    name: groupName,
+                    participant_ids: participant_ids
+                })
+            });
+            if (response.ok) {
+                const room = await response.json();
+                window.location.href = `/room/${room.id}/`;
+            } else {
+                alert('Could not create group');
+            }
+        }
+
+        if (token) {
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('dashboard-section').style.display = 'block';
+            loadDashboard();
+        }
+    </script>
+</body>
+</html>

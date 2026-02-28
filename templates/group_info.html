@@ -1,0 +1,50 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Group Info</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { display: flex; align-items: center; gap: 10px; border-bottom: 1px solid #ccc; padding-bottom: 10px; }
+        .back-btn { text-decoration: none; font-size: 24px; color: #000; }
+        .member-list { list-style: none; padding: 0; }
+        .member-item { display: flex; justify-content: space-between; padding: 10px; border-bottom: 1px solid #eee; }
+        .member-name { font-weight: bold; }
+        .admin-badge { background: #ff9800; color: white; padding: 2px 8px; border-radius: 12px; font-size: 12px; }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <a href="javascript:history.back()" class="back-btn">â†</a>
+        <h2 id="room-name">Group Info</h2>
+    </div>
+    <ul id="member-list" class="member-list"></ul>
+
+    <script>
+        const roomId = window.location.pathname.split('/')[2];
+        const token = localStorage.getItem('token');
+
+        async function loadMembers() {
+            const res = await fetch(`/api/chat/rooms/${roomId}/members/`, {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (res.ok) {
+                const members = await res.json();
+                const list = document.getElementById('member-list');
+                members.forEach(m => {
+                    const li = document.createElement('li');
+                    li.className = 'member-item';
+                    li.innerHTML = `<span class="member-name">${m.username}</span>`;
+                    if (m.role === 'admin') {
+                        li.innerHTML += '<span class="admin-badge">Admin</span>';
+                    }
+                    list.appendChild(li);
+                });
+            } else {
+                console.error('Failed to load members');
+            }
+        }
+
+        loadMembers();
+    </script>
+</body>
+</html>

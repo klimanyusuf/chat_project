@@ -50,7 +50,7 @@ It supports private 1‑on‑1 chats, group conversations, online status, typing
 
 ## 🏗️ Architecture
 
-![Uploading image.png…]()
+<img width="5377" height="5773" alt="image" src="https://github.com/user-attachments/assets/ab44007e-8352-4b3f-96d0-c8b383274651" />
 
 
 
@@ -198,7 +198,7 @@ Admin panel: http://localhost:8000/admin
 
 
 
-🔧 Configuration
+Configuration
 
 Key environment variables (.env):
 
@@ -280,7 +280,7 @@ POST /api/chat/rooms/<uuid:room\_id>/mark-read/ – Mark messages as read
 
 
 
-🔌 WebSocket Endpoints
+WebSocket Endpoints
 
 WebSocket connections use the same token as HTTP (?token=...).
 
@@ -294,7 +294,7 @@ ws://localhost:8000/ws/smart-reply/<room\_id>/ – Receive smart reply suggestio
 
 
 
-🧠 AI Smart Replies
+AI Smart Replies
 
 When a user sends a message, the backend triggers a Celery task that:
 

@@ -8,52 +8,49 @@ It supports private 1‑on‑1 chats, group conversations, online status, typing
 
 
 
-\## ✨ Features
+##  Features
+
+### Core Backend Functionalities
+
+- User Authentication  – JWT‑based registration, login, logout, session check, token refresh.
+
+- Private Messaging – Real‑time one‑to‑one chats with WebSockets.
+
+- Group Chats – Create groups, add members, automatic admin role for creator.
+
+- Message Persistence – All messages stored in PostgreSQL, history loaded on room entry.
+
+- Read & Delivery Receipts  – Single/double ticks for sent, delivered, read (via database models).
+
+- Online / Offline Status – Live user presence displayed in chat headers.
+
+- Typing Indicators – See when the other person is typing.
+
+- Smart Reply Suggestions – AI‑generated contextual replies (DeepSeek API) with fallback suggestions.
+
+- Group Info Page – Click group name to view member list with admin badges.
+
+- REST API – Full CRUD for rooms, messages, user list.
+
+- Admin Interface – Django admin for managing users, rooms, messages.
 
 
 
-\### Core Backend Functionalities
+### Frontend (Minimal, Functional)
 
-\- ✅ \*\*User Authentication\*\* – JWT‑based registration, login, logout, session check, token refresh.
+- Dashboard with conversations list and other users.
 
-\- ✅ \*\*Private Messaging\*\* – Real‑time one‑to‑one chats with WebSockets.
+- Chat view with WhatsApp‑like message bubbles, timestamps, online status, and smart reply buttons.
 
-\- ✅ \*\*Group Chats\*\* – Create groups, add members, automatic admin role for creator.
+- Group creation modal.
 
-\- ✅ \*\*Message Persistence\*\* – All messages stored in PostgreSQL, history loaded on room entry.
-
-\- ✅ \*\*Read \& Delivery Receipts\*\* – Single/double ticks for sent, delivered, read (via database models).
-
-\- ✅ \*\*Online / Offline Status\*\* – Live user presence displayed in chat headers.
-
-\- ✅ \*\*Typing Indicators\*\* – See when the other person is typing.
-
-\- ✅ \*\*Smart Reply Suggestions\*\* – AI‑generated contextual replies (DeepSeek API) with fallback suggestions.
-
-\- ✅ \*\*Group Info Page\*\* – Click group name to view member list with admin badges.
-
-\- ✅ \*\*REST API\*\* – Full CRUD for rooms, messages, user list.
-
-\- ✅ \*\*Admin Interface\*\* – Django admin for managing users, rooms, messages.
+- Responsive design (pure HTML/CSS/JS, no frameworks).
 
 
 
-\### Frontend (Minimal, Functional)
+##  Architecture
 
-\- Dashboard with conversations list and other users.
-
-\- Chat view with WhatsApp‑like message bubbles, timestamps, online status, and smart reply buttons.
-
-\- Group creation modal.
-
-\- Responsive design (pure HTML/CSS/JS, no frameworks).
-
-
-
-\## 🏗️ Architecture
-
-
-
+<img width="5377" height="5773" alt="image" src="https://github.com/user-attachments/assets/ab44007e-8352-4b3f-96d0-c8b383274651" />
 
 
 
@@ -64,7 +61,8 @@ It supports private 1‑on‑1 chats, group conversations, online status, typing
 
 
 
-🛠️ Tech Stack
+
+Tech Stack
 
 Backend: Python 3.11, Django 4.2, Django REST Framework, Django Channels
 
@@ -98,7 +96,7 @@ Frontend: Pure HTML5, CSS3, JavaScript (no frameworks)
 
 
 
-🚀 Getting Started
+ Getting Started
 
 Prerequisites
 
@@ -116,7 +114,7 @@ Clone the repository
 
 
 
-bash
+bash code: run on you server
 
 git clone https://github.com/yourusername/chat-app.git
 
@@ -128,7 +126,7 @@ Copy the example file and edit it with your values:
 
 
 
-bash
+bash code: run on you server
 
 cp .env.example .env
 
@@ -140,7 +138,7 @@ Run with Docker Compose
 
 
 
-bash
+bash code: run on you server
 
 docker-compose up -d --build
 
@@ -152,7 +150,7 @@ Apply database migrations
 
 
 
-bash
+bash code: run on you server
 
 docker-compose exec web python manage.py migrate
 
@@ -160,7 +158,7 @@ Create a superuser (admin)
 
 
 
-bash
+bash code: run on you server
 
 docker-compose exec web python manage.py createsuperuser
 
@@ -168,7 +166,7 @@ docker-compose exec web python manage.py createsuperuser
 
 
 
-bash
+bash code: run on you server
 
 docker-compose exec web python manage.py shell
 
@@ -200,7 +198,7 @@ Admin panel: http://localhost:8000/admin
 
 
 
-🔧 Configuration
+Configuration
 
 Key environment variables (.env):
 
@@ -224,7 +222,8 @@ REDIS\_URL	Redis connection string	redis://localhost:6379/0
 
 DEEPSEEK\_API\_KEY	Your DeepSeek API key	(empty)
 
-📡 API Endpoints
+
+ API Endpoints
 
 All REST endpoints are prefixed with /api/. Authentication is via JWT (Bearer token).
 
@@ -282,7 +281,7 @@ POST /api/chat/rooms/<uuid:room\_id>/mark-read/ – Mark messages as read
 
 
 
-🔌 WebSocket Endpoints
+WebSocket Endpoints
 
 WebSocket connections use the same token as HTTP (?token=...).
 
@@ -296,7 +295,7 @@ ws://localhost:8000/ws/smart-reply/<room\_id>/ – Receive smart reply suggestio
 
 
 
-🧠 AI Smart Replies
+AI Smart Replies
 
 When a user sends a message, the backend triggers a Celery task that:
 
@@ -400,11 +399,11 @@ chat\_project/
 
 Testing
 
-Run the test suite (if available) with:
+Run the test suite (if available) with
 
 
 
-bash
+bash code:
 
 docker-compose exec web python manage.py test
 

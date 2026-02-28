@@ -7,7 +7,7 @@ logger = logging.getLogger(__name__)
 
 class SmartReplyService:
     def __init__(self):
-        self.adapter = GeminiSmartReplyAdapter()
+        self.adapter = DeepSeekSmartReplyAdapter()
     
     async def get_suggestions(self, room_id, user_id, conversation_history):
         history_hash = hash("".join(conversation_history[-4:]))
@@ -40,6 +40,3 @@ class SmartReplyService:
         except Exception as e:
             logger.error(f"Smart reply generation failed: {e}")
             return []
-
-
-

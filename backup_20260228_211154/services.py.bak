@@ -41,5 +41,3 @@ class SmartReplyService:
             logger.error(f"Smart reply generation failed: {e}")
             return []
 
-
-

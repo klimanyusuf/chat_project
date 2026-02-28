@@ -1,4 +1,64 @@
-﻿<!DOCTYPE html>
+# fix_admin_and_group.ps1
+Write-Host "Fixing admin panel and group info page..." -ForegroundColor Cyan
+
+# 1. Register all models in admin.py
+$accountsAdminPath = "apps/accounts/admin.py"
+$accountsAdminContent = @'
+from django.contrib import admin
+from django.contrib.auth.admin import UserAdmin
+from .models import User
+
+@admin.register(User)
+class CustomUserAdmin(UserAdmin):
+    list_display = ['email', 'username', 'is_online', 'last_seen', 'is_active']
+    list_filter = ['is_online', 'is_active', 'date_joined']
+    search_fields = ['email', 'username']
+    fieldsets = UserAdmin.fieldsets + (
+        ('Additional Info', {'fields': ('is_online', 'last_seen', 'avatar', 'bio')}),
+    )
+'@
+Set-Content -Path $accountsAdminPath -Value $accountsAdminContent -Encoding UTF8
+Write-Host "✅ apps/accounts/admin.py updated."
+
+$chatAdminPath = "apps/chat/admin.py"
+$chatAdminContent = @'
+from django.contrib import admin
+from .models import ChatRoom, Message, RoomMembership, MessageReadReceipt, MessageDeliveryReceipt
+
+@admin.register(ChatRoom)
+class ChatRoomAdmin(admin.ModelAdmin):
+    list_display = ['id', 'name', 'room_type', 'created_by', 'created_at']
+    list_filter = ['room_type', 'created_at']
+    search_fields = ['name']
+    filter_horizontal = ['participants']
+
+@admin.register(Message)
+class MessageAdmin(admin.ModelAdmin):
+    list_display = ['id', 'sender', 'room', 'message_type', 'created_at']
+    list_filter = ['message_type', 'created_at']
+    search_fields = ['content']
+    date_hierarchy = 'created_at'
+
+@admin.register(RoomMembership)
+class RoomMembershipAdmin(admin.ModelAdmin):
+    list_display = ['room', 'user', 'role', 'joined_at']
+    list_filter = ['role']
+
+@admin.register(MessageReadReceipt)
+class MessageReadReceiptAdmin(admin.ModelAdmin):
+    list_display = ['message', 'user', 'read_at']
+
+@admin.register(MessageDeliveryReceipt)
+class MessageDeliveryReceiptAdmin(admin.ModelAdmin):
+    list_display = ['message', 'user', 'delivered_at']
+'@
+Set-Content -Path $chatAdminPath -Value $chatAdminContent -Encoding UTF8
+Write-Host "✅ apps/chat/admin.py updated."
+
+# 2. Replace group_info.html with a working version
+$groupInfoPath = "templates/group_info.html"
+$groupInfoContent = @'
+<!DOCTYPE html>
 <html>
 <head>
     <title>Group Info</title>
@@ -63,3 +123,11 @@
     </script>
 </body>
 </html>
+'@
+Set-Content -Path $groupInfoPath -Value $groupInfoContent -Encoding UTF8
+Write-Host "✅ templates/group_info.html updated."
+
+# 3. Restart web container to apply changes
+Write-Host "Restarting web container..."
+docker-compose restart web
+Write-Host "✅ Done. Check admin panel and group info page."

@@ -1,4 +1,43 @@
-﻿import aiohttp
+# fix_group_and_gemini.ps1
+Write-Host "Fixing group info URL and Gemini integration..." -ForegroundColor Cyan
+
+# Backup important files
+$backupDir = "backup_$(Get-Date -Format 'yyyyMMdd_HHmmss')"
+New-Item -ItemType Directory -Path $backupDir -Force | Out-Null
+Copy-Item "chat_project/urls.py" "$backupDir/urls.py.bak"
+Copy-Item "apps/ai_assistant/adapters.py" "$backupDir/adapters.py.bak" -ErrorAction SilentlyContinue
+Copy-Item "apps/ai_assistant/services.py" "$backupDir/services.py.bak" -ErrorAction SilentlyContinue
+Copy-Item "chat_project/settings.py" "$backupDir/settings.py.bak"
+Write-Host "Backups saved to $backupDir"
+
+# 1. Add group-info URL to urls.py
+$urlsPath = "chat_project/urls.py"
+$urlsContent = Get-Content $urlsPath -Raw
+if ($urlsContent -notmatch "group-info") {
+    # Find the line before the last ']' and insert the new line
+    $newLine = "    path('group-info/<uuid:room_id>/', TemplateView.as_view(template_name='group_info.html'), name='group-info'),"
+    $urlsContent = $urlsContent -replace '(\n\s*\]\s*)$', "`n$newLine`n]"
+    Set-Content -Path $urlsPath -Value $urlsContent -Encoding UTF8
+    Write-Host "Added group-info URL pattern."
+} else {
+    Write-Host "Group-info URL already present."
+}
+
+# 2. Add Gemini to settings.py
+$settingsPath = "chat_project/settings.py"
+$settings = Get-Content $settingsPath -Raw
+if ($settings -notmatch "gemini") {
+    $settings = $settings -replace '(AI_PROVIDERS\s*=\s*\{\s*deepseek:\s*\{[^}]+\}\s*)', "$1`n    'gemini': {`n        'api_key': os.getenv('GEMINI_API_KEY', ''),`n    },"
+    Set-Content -Path $settingsPath -Value $settings -Encoding UTF8
+    Write-Host "Added Gemini to settings.py."
+} else {
+    Write-Host "Gemini already in settings.py."
+}
+
+# 3. Replace adapters.py with both adapters (using single-quoted here-string)
+$adaptersPath = "apps/ai_assistant/adapters.py"
+$adapterContent = @'
+import aiohttp
 import json
 import asyncio
 import logging
@@ -152,3 +191,30 @@ Example: ["Thanks!", "Sounds good", "I'll check"]"""
     def _get_fallback_suggestions(self):
         from django.conf import settings
         return settings.SMART_REPLY['FALLBACK_SUGGESTIONS']
+'@
+Set-Content -Path $adaptersPath -Value $adapterContent -Encoding UTF8
+Write-Host "Updated adapters.py with both adapters."
+
+# 4. Update services.py to use Gemini
+$servicesPath = "apps/ai_assistant/services.py"
+$servicesContent = Get-Content $servicesPath -Raw
+$servicesContent = $servicesContent -replace 'self\.adapter = DeepSeekSmartReplyAdapter\(\)', 'self.adapter = GeminiSmartReplyAdapter()'
+Set-Content -Path $servicesPath -Value $servicesContent -Encoding UTF8
+Write-Host "Updated services.py to use Gemini."
+
+# 5. Add Gemini API key to .env
+$envPath = ".env"
+$envContent = Get-Content $envPath -Raw
+if ($envContent -notmatch "GEMINI_API_KEY") {
+    $envContent += "`nGEMINI_API_KEY=AIzaSyAhIU6gBF0uA0xmOgdV7NKh1Pb2VsoVVwc"
+    Set-Content -Path $envPath -Value $envContent -Encoding UTF8
+    Write-Host "Added Gemini API key to .env."
+} else {
+    Write-Host "Gemini API key already in .env."
+}
+
+# 6. Restart containers
+Write-Host "Restarting web and celery containers..."
+docker-compose restart web celery
+
+Write-Host "Done. The group info page should now work. Smart replies will use Gemini." -ForegroundColor Green

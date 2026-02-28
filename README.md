@@ -8,52 +8,49 @@ It supports private 1‑on‑1 chats, group conversations, online status, typing
 
 
 
-\## ✨ Features
+##  Features
+
+### Core Backend Functionalities
+
+- User Authentication  – JWT‑based registration, login, logout, session check, token refresh.
+
+- Private Messaging – Real‑time one‑to‑one chats with WebSockets.
+
+- Group Chats – Create groups, add members, automatic admin role for creator.
+
+- Message Persistence – All messages stored in PostgreSQL, history loaded on room entry.
+
+- Read & Delivery Receipts  – Single/double ticks for sent, delivered, read (via database models).
+
+- Online / Offline Status – Live user presence displayed in chat headers.
+
+- Typing Indicators – See when the other person is typing.
+
+- Smart Reply Suggestions – AI‑generated contextual replies (DeepSeek API) with fallback suggestions.
+
+- Group Info Page – Click group name to view member list with admin badges.
+
+- REST API – Full CRUD for rooms, messages, user list.
+
+- Admin Interface – Django admin for managing users, rooms, messages.
 
 
 
-\### Core Backend Functionalities
+### Frontend (Minimal, Functional)
 
-\- ✅ \*\*User Authentication\*\* – JWT‑based registration, login, logout, session check, token refresh.
+- Dashboard with conversations list and other users.
 
-\- ✅ \*\*Private Messaging\*\* – Real‑time one‑to‑one chats with WebSockets.
+- Chat view with WhatsApp‑like message bubbles, timestamps, online status, and smart reply buttons.
 
-\- ✅ \*\*Group Chats\*\* – Create groups, add members, automatic admin role for creator.
+- Group creation modal.
 
-\- ✅ \*\*Message Persistence\*\* – All messages stored in PostgreSQL, history loaded on room entry.
-
-\- ✅ \*\*Read \& Delivery Receipts\*\* – Single/double ticks for sent, delivered, read (via database models).
-
-\- ✅ \*\*Online / Offline Status\*\* – Live user presence displayed in chat headers.
-
-\- ✅ \*\*Typing Indicators\*\* – See when the other person is typing.
-
-\- ✅ \*\*Smart Reply Suggestions\*\* – AI‑generated contextual replies (DeepSeek API) with fallback suggestions.
-
-\- ✅ \*\*Group Info Page\*\* – Click group name to view member list with admin badges.
-
-\- ✅ \*\*REST API\*\* – Full CRUD for rooms, messages, user list.
-
-\- ✅ \*\*Admin Interface\*\* – Django admin for managing users, rooms, messages.
+- Responsive design (pure HTML/CSS/JS, no frameworks).
 
 
 
-\### Frontend (Minimal, Functional)
+## 🏗️ Architecture
 
-\- Dashboard with conversations list and other users.
-
-\- Chat view with WhatsApp‑like message bubbles, timestamps, online status, and smart reply buttons.
-
-\- Group creation modal.
-
-\- Responsive design (pure HTML/CSS/JS, no frameworks).
-
-
-
-\## 🏗️ Architecture
-
-
-
+![Uploading image.png…]()
 
 
 
@@ -64,7 +61,8 @@ It supports private 1‑on‑1 chats, group conversations, online status, typing
 
 
 
-🛠️ Tech Stack
+
+Tech Stack
 
 Backend: Python 3.11, Django 4.2, Django REST Framework, Django Channels
 
@@ -98,7 +96,7 @@ Frontend: Pure HTML5, CSS3, JavaScript (no frameworks)
 
 
 
-🚀 Getting Started
+ Getting Started
 
 Prerequisites
 

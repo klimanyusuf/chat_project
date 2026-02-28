@@ -48,7 +48,7 @@ It supports private 1‑on‑1 chats, group conversations, online status, typing
 
 
 
-## 🏗️ Architecture
+##  Architecture
 
 <img width="5377" height="5773" alt="image" src="https://github.com/user-attachments/assets/ab44007e-8352-4b3f-96d0-c8b383274651" />
 
@@ -114,7 +114,7 @@ Clone the repository
 
 
 
-bash
+bash code: run on you server
 
 git clone https://github.com/yourusername/chat-app.git
 
@@ -126,7 +126,7 @@ Copy the example file and edit it with your values:
 
 
 
-bash
+bash code: run on you server
 
 cp .env.example .env
 
@@ -138,7 +138,7 @@ Run with Docker Compose
 
 
 
-bash
+bash code: run on you server
 
 docker-compose up -d --build
 
@@ -150,7 +150,7 @@ Apply database migrations
 
 
 
-bash
+bash code: run on you server
 
 docker-compose exec web python manage.py migrate
 
@@ -158,7 +158,7 @@ Create a superuser (admin)
 
 
 
-bash
+bash code: run on you server
 
 docker-compose exec web python manage.py createsuperuser
 
@@ -166,7 +166,7 @@ docker-compose exec web python manage.py createsuperuser
 
 
 
-bash
+bash code: run on you server
 
 docker-compose exec web python manage.py shell
 
@@ -222,7 +222,8 @@ REDIS\_URL	Redis connection string	redis://localhost:6379/0
 
 DEEPSEEK\_API\_KEY	Your DeepSeek API key	(empty)
 
-📡 API Endpoints
+
+ API Endpoints
 
 All REST endpoints are prefixed with /api/. Authentication is via JWT (Bearer token).
 
@@ -398,11 +399,11 @@ chat\_project/
 
 Testing
 
-Run the test suite (if available) with:
+Run the test suite (if available) with
 
 
 
-bash
+bash code:
 
 docker-compose exec web python manage.py test
 

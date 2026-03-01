@@ -85,7 +85,7 @@ Example: ["Thanks!", "Sounds good", "I'll check"]"""
 class GeminiSmartReplyAdapter:
     def __init__(self):
         self.api_key = settings.AI_PROVIDERS['gemini'].get('api_key', '')
-        self.api_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent"
+        self.api_url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent"
         
     async def generate_suggestions(self, conversation_history, max_suggestions=3):
         if not self.api_key:
@@ -105,14 +105,15 @@ class GeminiSmartReplyAdapter:
                         }],
                         "generationConfig": {
                             "temperature": 0.3,
-                            "maxOutputTokens": 150,
+                            "maxOutputTokens": 500,
                             "topP": 0.9
                         }
                     },
-                    timeout=5
+                    timeout=30
                 ) as response:
                     if response.status == 200:
                         result = await response.json()
+                        logger.info(f"Gemini raw response: {result}")
                         return self._parse_suggestions(result)
                     else:
                         error_text = await response.text()
@@ -128,27 +129,56 @@ class GeminiSmartReplyAdapter:
     def _build_prompt(self, history, max_suggestions):
         recent = history[-6:] if len(history) > 6 else history
         history_text = "\n".join(recent)
-        return f"""Based on this conversation:
+        return f"""Conversation:
 {history_text}
 
-Generate {max_suggestions} short, natural reply options.
-Each reply should be under 60 characters.
-Return ONLY a JSON array of strings.
-Example: ["Thanks!", "Sounds good", "I'll check"]"""
+Generate {max_suggestions} very short reply options (max 60 chars). Return ONLY a JSON array, no extra text.
+Example: ["Thanks!", "Sounds good"]"""
     
     def _parse_suggestions(self, response):
         try:
-            content = response['candidates'][0]['content']['parts'][0]['text']
+            text = response['candidates'][0]['content']['parts'][0]['text']
+            logger.info(f"Gemini raw text: {text}")
             import re
-            json_match = re.search(r'\[.*\]', content, re.DOTALL)
+            text = re.sub(r'^```json\s*', '', text, flags=re.MULTILINE)
+            text = re.sub(r'\s*```$', '', text, flags=re.MULTILINE)
+            text = text.strip()
+            
+            if text.startswith('[') and text.endswith(']'):
+                try:
+                    suggestions = json.loads(text)
+                    if isinstance(suggestions, list):
+                        result = [s.strip()[:60] for s in suggestions if isinstance(s, str) and s.strip()]
+                        result = [s for s in result if s]
+                        if result:
+                            return result[:3]
+                except json.JSONDecodeError:
+                    pass
+            
+            json_match = re.search(r'\[.*\]', text, re.DOTALL)
             if json_match:
-                suggestions = json.loads(json_match.group())
-                if isinstance(suggestions, list):
-                    return [s.strip()[:60] for s in suggestions if s][:3]
-        except Exception as e:
-            logger.error(f"Error parsing Gemini response: {e}")
-        return self._get_fallback_suggestions()
+                try:
+                    suggestions = json.loads(json_match.group())
+                    if isinstance(suggestions, list):
+                        result = [s.strip()[:60] for s in suggestions if isinstance(s, str) and s.strip()]
+                        result = [s for s in result if s]
+                        if result:
+                            return result[:3]
+                except json.JSONDecodeError:
+                    pass
+            
+            lines = re.split(r',|\n', text)
+            cleaned = [line.strip().strip('"[] ') for line in lines if line.strip()]
+            if cleaned:
+                return cleaned[:3]
+            
+            logger.warning("No suggestions parsed, using fallback")
+            return self._get_fallback_suggestions()
+        except (KeyError, IndexError) as e:
+            logger.error(f"Error accessing Gemini response structure: {e}")
+            return self._get_fallback_suggestions()
     
     def _get_fallback_suggestions(self):
         from django.conf import settings
         return settings.SMART_REPLY['FALLBACK_SUGGESTIONS']
+

@@ -138,6 +138,9 @@ AI_PROVIDERS = {
     'deepseek': {
         'api_key': os.getenv('DEEPSEEK_API_KEY', ''),
     },
+    'gemini': {
+        'api_key': os.getenv('GEMINI_API_KEY', ''),
+    },
 }
 
 SMART_REPLY = {

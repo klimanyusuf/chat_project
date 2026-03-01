@@ -1,0 +1,70 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <title>Sign Up - Chat App</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 400px; margin: 0 auto; padding: 20px; }
+        .form-group { margin-bottom: 15px; }
+        label { display: block; margin-bottom: 5px; }
+        input { width: 100%; padding: 8px; border: 1px solid #ccc; border-radius: 4px; }
+        button { padding: 10px 20px; background: #0084ff; color: white; border: none; border-radius: 4px; cursor: pointer; }
+        .error { color: red; font-size: 12px; margin-top: 5px; }
+        .link { margin-top: 15px; text-align: center; }
+    </style>
+</head>
+<body>
+    <h2>Sign Up</h2>
+    <form id="signup-form">
+        <div class="form-group">
+            <label>Username</label>
+            <input type="text" id="username" required>
+        </div>
+        <div class="form-group">
+            <label>Email</label>
+            <input type="email" id="email" required>
+        </div>
+        <div class="form-group">
+            <label>Password</label>
+            <input type="password" id="password" required>
+        </div>
+        <div class="form-group">
+            <label>Confirm Password</label>
+            <input type="password" id="password2" required>
+        </div>
+        <button type="submit">Sign Up</button>
+        <div id="error" class="error"></div>
+    </form>
+    <div class="link">
+        Already have an account? <a href="/login/">Login</a>
+    </div>
+
+    <script>
+        document.getElementById('signup-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const username = document.getElementById('username').value;
+            const email = document.getElementById('email').value;
+            const password = document.getElementById('password').value;
+            const password2 = document.getElementById('password2').value;
+            
+            if (password !== password2) {
+                document.getElementById('error').innerText = 'Passwords do not match';
+                return;
+            }
+            
+            const response = await fetch('/api/auth/register/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username, email, password, password2 })
+            });
+            
+            if (response.ok) {
+                alert('Registration successful! Please login.');
+                window.location.href = '/login/';
+            } else {
+                const data = await response.json();
+                document.getElementById('error').innerText = data.error || 'Registration failed';
+            }
+        });
+    </script>
+</body>
+</html>

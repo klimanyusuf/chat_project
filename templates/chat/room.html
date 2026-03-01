@@ -25,6 +25,8 @@
 <script>
         const path = window.location.pathname;
     const matches = path.match(/\/room\/([0-9a-f-]+)/);
+    
+        const wsProtocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
     const roomId = matches ? matches[1] : null;
     if (!roomId) {
         alert('Invalid room URL. Redirecting to dashboard.');
@@ -142,7 +144,7 @@
         messagesDiv.scrollTop = messagesDiv.scrollHeight;
     }
 
-    const chatWs = new WebSocket(`ws://${window.location.host}/ws/chat/${roomId}/?token=${token}`);
+    const chatWs = new WebSocket(`${wsProtocol}//${window.location.host}/ws/chat/${roomId}/?token=${token}`);
     chatWs.onopen = () => { console.log('Chat WS connected'); loadRoomDetails(); };
     chatWs.onmessage = (e) => {
         const data = JSON.parse(e.data);
@@ -156,7 +158,7 @@
         }
     };
 
-    const smartReplyWs = new WebSocket(`ws://${window.location.host}/ws/smart-reply/${roomId}/?token=${token}`);
+    const smartReplyWs = new WebSocket(`${wsProtocol}//${window.location.host}/ws/smart-reply/${roomId}/?token=${token}`);
     smartReplyWs.onmessage = (e) => {
         const data = JSON.parse(e.data);
         if (data.type === 'smart_replies') {
@@ -203,6 +205,7 @@
     document.getElementById('message-input').addEventListener('keypress', (e) => { if (e.key === 'Enter') sendMessage(); });
 </script>
 {% endblock %}
+
 
 
 

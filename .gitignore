@@ -8,6 +8,11 @@ __pycache__/
 *.sqlite3
 .DS_Store
 
+# Backup files
+*.bak
+*.bakup
+backup_*/
+
 # Environment
 .env
 venv/

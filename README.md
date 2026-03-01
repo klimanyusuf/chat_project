@@ -34,6 +34,11 @@ It supports private 1‑on‑1 chats, group conversations, online status, typing
 
 - Admin Interface – Django admin for managing users, rooms, messages.
 
+# Admin Panel features:
+- Chat Rooms- Manage participants easily with a multi‑select widget (`filter_horizontal`).
+- Messages- Search, view, and delete messages directly from the admin.
+- User Management- Full CRUD for users, including email on the add form
+
 
 
 ### Frontend (Minimal, Functional)
@@ -84,7 +89,7 @@ ASGI Server: Daphne
 
 
 
-AI Integration: DeepSeek API (with fallback suggestions)
+AI Integration: DeepSeek/GEMINI API (with fallback suggestions)
 
 
 

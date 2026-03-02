@@ -51,3 +51,12 @@ class UserListView(generics.ListAPIView):
     queryset = User.objects.filter(is_active=True)
     serializer_class = UserSerializer
     permission_classes = [permissions.IsAuthenticated]
+
+class ForgotPasswordView(APIView):
+    permission_classes = [permissions.AllowAny]
+
+    def post(self, request):
+        email = request.data.get('email')
+        # In a real app, you would generate a token and send an email here.
+        # For now, just return a generic success message (security best practice).
+        return Response({'message': 'If that email exists, a reset link has been sent.'})

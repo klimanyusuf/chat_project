@@ -307,9 +307,23 @@ WebSocket endpoints:
 \- `ws://localhost:8000/ws/smart-reply/<room\\\_id>/`
 
 
-
 ---
 
+
+Session check endpoint: GET /api/auth/session/
+
+Code location: apps/accounts/views.py → SessionCheckView
+
+URL defined in: apps/accounts/urls.py
+
+Token refresh endpoint: POST /api/auth/refresh/
+
+Code location: apps/accounts/views.py → RefreshSessionView (inherits from TokenRefreshView)
+
+URL defined in: apps/accounts/urls.py
+
+
+---
 
 
 \##  Testing the App Locally

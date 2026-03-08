@@ -1,8 +1,9 @@
 \# Real‑Time Chat Application with AI Smart Replies
 
+live App :https://chat-project-s9uv.onrender.com/signup/
 
 
-A fully functional real‑time chat application built with Django, Django Channels, and Django REST Framework.  
+This is a fully functional real‑time chat application built with Django, Django Channels, and Django REST Framework.  
 
 It supports private 1‑on‑1 chats, group conversations, online status, typing indicators, message read receipts, and AI‑powered smart reply suggestions (with fallback when API credits are exhausted).
 
